@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discipline Advanced Trader Journal V2</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Existing Scripts (Aapke pehle ke scripts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- ADDED: Razorpay Official Integration Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- ===========================
+HEADER
+=========================== -->
+
+<header class="top-header">
+
+<div class="logo-box">
+
+<div class="logo">
+
+<i class="fa-solid fa-chart-line"></i>
+
+</div>
+
+<div>
+
+<h1>DISCIPLINE ADVANCED TRADER</h1>
+
+<p>Professional Trading Journal V2</p>
+
+</div>
+
+</div>
+
+<div class="header-right">
+
+<div class="input-box">
+
+<label>Date</label>
+
+<input
+type="date"
+id="journalDate">
+
+</div>
+
+<div class="input-box">
+
+<label>Trading Session</label>
+
+<select id="session">
+
+<option>Asia</option>
+
+<option>London</option>
+
+<option>New York</option>
+
+<option>Multiple Session</option>
+
+</select>
+
+</div>
+
+<div class="input-box">
+
+<label>Market Bias</label>
+
+<select id="marketBias">
+
+<option>Bullish</option>
+
+<option>Bearish</option>
+
+<option>Sideways</option>
+
+</select>
+
+</div>
+
+</div>
+
+</header>
+
+<!-- ===========================
+MY BEST SETUPS
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+
+
+<!-- ======================================================
+PREMIUM SETUP MODULE
+====================================================== -->
+
+<section class="setup-module">
+
+    <div class="setup-header">
+
+        <div class="setup-title">
+
+            <div class="setup-icon">
+                <i class="fa-solid fa-crosshairs"></i>
+            </div>
+
+            <div>
+                <h2>SELECT TRADING SETUP</h2>
+                <p>Choose your setup for this trade</p>
+            </div>
+
+        </div>
+
+        <button id="resetSetup" class="reset-btn">
+            <i class="fa-solid fa-rotate-right"></i>
+            Reset Setup
+        </button>
+
+    </div>
+
+    
+<!-- =========================
+    SETUP CARDS
+    ========================== -->
+
+    <div class="setup-cards">
+
+        <!-- A1+ -->
+
+        <div class="setup-card green"
+             data-setup="A1+">
+
+            <div class="setup-circle">
+
+                <i class="fa-solid fa-rocket"></i>
+
+            </div>
+
+            <h3>A1+</h3>
+
+            <h4>100% Confidence</h4>
+
+            <p>Aggressive Entry (85% Best)</p>
+
+            <span>Click to Select</span>
+
+        </div>
+
+        <!-- A1 -->
+
+        <div class="setup-card blue"
+             data-setup="A1">
+
+            <div class="setup-circle">
+
+                <i class="fa-solid fa-bolt"></i>
+
+            </div>
+
+            <h3>A1</h3>
+
+            <h4>90% Confidence</h4>
+
+            <p>Aggressive Entry (62% Best)</p>
+
+            <span>Click to Select</span>
+
+        </div>
+
+        <!-- B1 -->
+
+        <div class="setup-card yellow"
+             data-setup="B1">
+
+            <div class="setup-circle">
+
+                <i class="fa-solid fa-shield-halved"></i>
+
+            </div>
+
+            <h3>B1+</h3>
+
+            <h4>90% Confidence</h4>
+
+            <p>Confirmation Entry (Gap & Wick)</p>
+
+            <span>Click to Select</span>
+
+        </div>
+
+        <!-- B2+ -->
+
+        <div class="setup-card red"
+             data-setup="B2+">
+
+            <div class="setup-circle">
+
+                <i class="fa-solid fa-shield"></i>
+
+            </div>
+
+            <h3>B2+</h3>
+
+            <h4>80% Confidence</h4>
+
+           <p>CONTINUE / REVERSAL  / 15 M SETUP</p>
+
+            <span>Click to Select</span>
+
+        </div>
+
+    </div>
+
+   
+    <!-- =========================
+    DETAILS PANEL
+    ========================== -->
+
+    <div id="setupDetails"
+         class="setup-details">
+
+        <div class="details-top">
+
+            <div class="details-left">
+
+                <div id="detailIcon"
+                     class="detail-icon">
+
+                    <i class="fa-solid fa-rocket"></i>
+
+                </div>
+
+                <div>
+
+                    <h2 id="detailTitle">
+                        A1+
+                    </h2>
+
+                    <div id="detailBadge"
+                         class="detail-badge">
+
+                        Aggressive Entry
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="bestBadge"
+                 class="best-badge">
+
+                ⭐ MY BEST SETUP
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <h3>SETUP RULES</h3>
+
+        <ol id="setupRules">
+
+            <!-- JS INSERT -->
+
+        </ol>
+
+        <div id="setupNote"
+             class="setup-note">
+
+        </div>
+
+<!-- =========================
+SETUP CHECKLIST
+========================= -->
+
+<div id="setupChecklist" class="setup-checklist">
+
+    <!-- JavaScript yahan setup list banayega -->
+
+</div>
+
+    </div>
+
+</section> 
+
+<!-- ===========================
+TRADE TABLE
+=========================== -->
+
+<section class="card trade-card">
+
+<div class="table-header">
+
+<h2>
+
+Today's Trades
+
+</h2>
+
+<button
+id="addTrade"
+class="gold-btn">
+
+<i class="fa-solid fa-plus"></i>
+
+Add Trade
+
+</button>
+
+</div>
+
+<div class="table-responsive">
+
+<table
+id="tradeTable">
+
+<thead>
+
+<tr>
+
+<th>#</th>
+
+<th>Time</th>
+
+<th>Pair</th>
+
+<th>Direction</th>
+
+<th>Quantity</th>
+
+<th>Entry</th>
+
+<th>Exit</th>
+
+<th>P/L</th>
+
+<th>Emotion</th>
+
+<th>Mistakes</th>
+
+<th>Rule Follow</th>
+
+<th>Delete</th>
+
+</tr>
+
+</thead>
+
+<tbody
+id="tradeBody">
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+<!-- Continue in Part 2 --><!-- ===========================
+DAILY SUMMARY
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+
+Daily Summary
+
+</h2>
+
+<div class="summary-grid">
+
+<div class="summary-box">
+
+<label>Total Trades</label>
+
+<input
+type="text"
+id="totalTrades"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Winning Trades</label>
+
+<input
+type="text"
+id="winningTrades"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Losing Trades</label>
+
+<input
+type="text"
+id="losingTrades"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Win Rate</label>
+
+<input
+type="text"
+id="winRate"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Net P/L</label>
+
+<input
+type="text"
+id="netProfit"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Best Trade</label>
+
+<input
+type="text"
+id="bestTrade"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Worst Trade</label>
+
+<input
+type="text"
+id="worstTrade"
+readonly>
+
+</div>
+
+<div class="summary-box">
+
+<label>Average R:R</label>
+
+<input
+type="text"
+id="averageRR"
+readonly>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- ===========================
+TRADING PSYCHOLOGY
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+
+Trading Psychology
+
+</h2>
+
+<div class="psychology-grid">
+
+<label><input type="checkbox" id="fear"> Fear</label>
+
+<label><input type="checkbox" id="fomo"> FOMO</label>
+
+<label><input type="checkbox" id="greed"> Greed</label>
+
+<label><input type="checkbox" id="revenge"> Revenge Trading</label>
+
+<label><input type="checkbox" id="overTrading"> Over Trading</label>
+
+<label><input type="checkbox" id="patience"> Patience</label>
+
+<label><input type="checkbox" id="followPlan"> Followed Plan</label>
+
+<label><input type="checkbox" id="noEmotion"> No Emotion</label>
+
+</div>
+
+</section>
+
+<!-- ===========================
+NOTES
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+
+Trading Notes
+
+</h2>
+
+<div class="notes-grid">
+
+<div>
+
+<label>Today's Plan</label>
+
+<textarea
+id="todayPlan"></textarea>
+
+</div>
+
+<div>
+
+<label>Trade Review</label>
+
+<textarea
+id="tradeReview"></textarea>
+
+</div>
+
+<div>
+
+<label>Mistakes</label>
+
+<textarea
+id="mistakes"></textarea>
+
+</div>
+
+<div>
+
+<label>Lessons Learned</label>
+
+<textarea
+id="lessons"></textarea>
+
+</div>
+
+<div>
+
+<label>Tomorrow Plan</label>
+
+<textarea
+id="tomorrowPlan"></textarea>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- ===========================
+SCREENSHOTS
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+📷 Trade Screenshots
+</h2>
+
+<div class="screenshot-grid">
+
+    <!-- BEFORE -->
+
+    <div class="shot-card">
+
+        <h3>Before Trade</h3>
+
+        <div class="drop-zone" id="beforeZone">
+
+            <input
+                type="file"
+                id="beforeChart"
+                accept="image/*"
+                hidden>
+
+
+        
+            <img
+                id="beforePreview"
+                class="preview-image">
+
+            <button
+                type="button"
+                class="remove-image"
+                data-key="before">
+
+                ✕
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- AFTER -->
+
+    <div class="shot-card">
+
+        <h3>After Trade</h3>
+
+        <div class="drop-zone" id="afterZone">
+
+            <input
+                type="file"
+                id="afterChart"
+                accept="image/*"
+                hidden>
+
+          
+
+            <img
+                id="afterPreview"
+                class="preview-image">
+
+            <button
+                type="button"
+                class="remove-image"
+                data-key="after">
+
+                ✕
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- MISTAKE -->
+
+    <div class="shot-card">
+
+        <h3>Mistake Analysis</h3>
+
+        <div class="drop-zone" id="mistakeZone">
+
+            <input
+                type="file"
+                id="mistakeChart"
+                accept="image/*"
+                hidden>
+
+            
+              
+            <img
+                id="mistakePreview"
+                class="preview-image">
+
+            <button
+                type="button"
+                class="remove-image"
+                data-key="mistake">
+
+                ✕
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</section>
+
+<!-- ===========================
+CALENDAR
+=========================== -->
+
+<section class="card">
+
+<div class="calendar-header">
+
+<h2>
+
+Trading Calendar
+
+</h2>
+
+<div class="calendar-controls">
+
+<button
+id="prevMonth">
+
+<i class="fa-solid fa-chevron-left"></i>
+
+</button>
+
+<select
+id="calendarMonth">
+
+</select>
+
+<select
+id="calendarYear">
+
+</select>
+
+<button
+id="nextMonth">
+
+<i class="fa-solid fa-chevron-right"></i>
+
+</button>
+
+</div>
+
+</div>
+
+<div
+id="calendar">
+
+</div>
+
+</section>
+
+<!-- Continue in Part 3 --><!-- ===========================
+TRADE SEARCH & FILTER
+=========================== -->
+
+<section class="card">
+
+<div class="filter-header">
+
+<h2 class="card-title">
+
+Trade Search & Filter
+
+</h2>
+
+</div>
+
+<div class="filter-grid">
+
+<div>
+
+<label>Search Pair</label>
+
+<input
+type="text"
+id="searchTrade"
+placeholder="Ex : XAUUSD">
+
+</div>
+
+<div>
+
+<label>Direction</label>
+
+<select id="filterDirection">
+
+<option value="All">All</option>
+
+<option value="Buy">Buy</option>
+
+<option value="Sell">Sell</option>
+
+</select>
+
+</div>
+
+<div>
+
+<label>Result</label>
+
+<select id="filterResult">
+
+<option value="All">All</option>
+
+<option value="Profit">Profit</option>
+
+<option value="Loss">Loss</option>
+
+</select>
+
+</div>
+
+<div>
+
+<label>Setup</label>
+
+<select id="filterSetup">
+
+    <option value="All">All Setup</option>
+    <option value="A1+">A1+ (85% Retres Setups)</option>
+    <option value="A1">A1 (62% Retres Setups)</option>
+    <option value="B1">B1+ (Gap Up/Down & Wick Setups)</option>
+    <option value="B2+">B2+ (Zone/Trend Setups)</option>
+    <option value="Gap Down">Gap Down Setups</option>
+    <option value="Gap Up">Gap Up Setups</option>
+    <option value="Wick">Wick Setups</option>
+    <option value="Reversal">Reversal Setups</option>
+    <option value="Continue">Continue / Confuse Setups</option>
+    <option value="15 Min">15 Min Candle Breck Setups</option>
+</select>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- ===========================
+SELECTED DATE DETAILS
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+
+Selected Day Journal
+
+</h2>
+
+<p id="selectedDateText">
+
+Click any date on the calendar to load that day's complete journal.
+
+</p>
+
+<div id="selectedTrades">
+
+</div>
+
+</section>
+
+<!-- ===========================
+BACKUP & EXPORT
+=========================== -->
+
+<section class="card">
+
+<h2 class="card-title">
+
+Backup & Export
+
+</h2>
+
+<div class="button-grid">
+
+<button
+id="saveTrade"
+class="gold-btn">
+
+<i class="fa-solid fa-floppy-disk"></i>
+
+Save Trade
+
+</button>
+
+<button
+id="exportPDF"
+class="gold-btn">
+
+<i class="fa-solid fa-file-pdf"></i>
+
+Export PDF
+
+</button>
+
+<button
+id="exportExcel"
+class="gold-btn">
+
+<i class="fa-solid fa-file-excel"></i>
+
+Export Excel
+
+</button>
+
+<button
+id="backupData"
+class="gold-btn">
+
+<i class="fa-solid fa-download"></i>
+
+Backup
+
+</button>
+
+<button
+id="restoreData"
+class="gold-btn">
+
+<i class="fa-solid fa-upload"></i>
+
+Restore
+
+</button>
+
+<input
+type="file"
+id="restoreFile"
+accept=".json"
+hidden>
+
+<button
+id="printJournal"
+class="gold-btn">
+
+<i class="fa-solid fa-print"></i>
+
+Print
+
+</button>
+
+<button
+id="clearJournal"
+class="danger-btn">
+
+<i class="fa-solid fa-trash"></i>
+
+Clear Journal
+
+</button>
+
+</div>
+
+</section>
+
+<!-- ===========================
+SUBSCRIPTION PLANS SECTION
+=========================== -->
+<section class="card subscription-section" style="margin: 30px var(--spacing); padding: 30px; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow);">
+    <h2 class="card-title" style="color: var(--gold); text-align: center; margin-bottom: 25px;">
+        <i class="fa-solid fa-crown"></i> Upgrade to Discipline Advanced Trader Pro
+    </h2>
+    
+    <div class="plans-container" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+        
+        <!-- 1 Month Plan -->
+        <div class="plan-card" style="background: var(--card2); border: 2px solid #22c55e; border-radius: var(--radius); padding: 25px; text-align: center; width: 280px; box-shadow: var(--shadow);">
+            <h3 style="color: #ffffff; font-size: 22px;">1 Month</h3>
+            <p style="color: var(--text2); margin: 10px 0;">Basic Discipline Starter</p>
+            <div class="price" style="font-size: 32px; font-weight: 800; color: #22c55e; margin: 15px 0;">₹150</div>
+            <button class="gold-btn buy-plan-btn" data-amount="150" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer;">
+                Subscribe Now
+            </button>
+        </div>
+
+        <!-- 6 Months Plan -->
+        <div class="plan-card" style="background: var(--card2); border: 2px solid #3d8bfd; border-radius: var(--radius); padding: 25px; text-align: center; width: 280px; box-shadow: var(--shadow); position: relative;">
+            <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3d8bfd; color: #fff; padding: 2px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">POPULAR</span>
+            <h3 style="color: #ffffff; font-size: 22px;">6 Months</h3>
+            <p style="color: var(--text2); margin: 10px 0;">Traders Choice Pack</p>
+            <div class="price" style="font-size: 32px; font-weight: 800; color: #3d8bfd; margin: 15px 0;">₹700</div>
+            <button class="gold-btn buy-plan-btn" data-amount="700" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer;">
+                Subscribe Now
+            </button>
+        </div>
+
+        <!-- 1 Year Plan -->
+        <div class="plan-card" style="background: var(--card2); border: 2px solid var(--gold); border-radius: var(--radius); padding: 25px; text-align: center; width: 280px; box-shadow: var(--shadow);">
+            <h3 style="color: #ffffff; font-size: 22px;">1 Year</h3>
+            <p style="color: var(--text2); margin: 10px 0;">Pro Disciplined Trader</p>
+            <div class="price" style="font-size: 32px; font-weight: 800; color: var(--gold); margin: 15px 0;">₹1000</div>
+            <button class="gold-btn buy-plan-btn" data-amount="1000" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer;">
+                Subscribe Now
+            </button>
+        </div>
+
+    </div>
+</section>
+
+<!-- ===========================
+FOOTER
+=========================== -->
+<footer>
+    <div>
+        <h3>DISCIPLINE ADVANCED TRADER</h3>
+        <p>Professional Trading Journal V2</p>
+    </div>
+    <div>
+        <p>Version 2.0</p>
+        <p>Designed for Personal Trading Performance</p>
+    </div>
+</footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
