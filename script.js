@@ -1700,12 +1700,15 @@ async function handleAuthSubmit(event, type) {
     errorEl.innerText = ""; // clear message
 
     try {
-        const url = type === 'login' ? '/api/auth/login' : '/api/auth/signup';
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
+    // '/api/auth/signup' ki jagah '/api/auth/register' likh dijiye
+    const url = type === 'login' ? '/api/auth/login' : '/api/auth/register'; 
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    // ... baaki ka code waisa hi rehne dein
 
         const data = await response.json();
 
