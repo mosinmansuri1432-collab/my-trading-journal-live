@@ -190,42 +190,11 @@ app.listen(PORT, () => {
 
 });
 
+
 /*=========================================================
 👑 ADMIN PANEL BACKEND SECURE APIs & OTP PASSWORD RESET
 =========================================================*/
-const nodemailer = require('nodemailer');
-let otpStore = {}; // Temporary memory OTP save karne ke liye
-
-// Users data load karne ke helpers
-const USERS_FILE = path.join(__dirname, 'users.json');
-
-function readUsersFromFile() {
-    try {
-        if (!fs.existsSync(USERS_FILE)) return [];
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        return JSON.parse(data || '[]');
-    } catch (e) {
-        console.error("Error reading users file:", e);
-        return [];
-    }
-}
-
-function writeUsersToFile(users) {
-    try {
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
-    } catch (e) {
-        console.error("Error writing users file:", e);
-    }
-}
-
-// Apne Gmail SMTP se connect karne ke liye config
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'mosinmansuri1432@gmail.com', // Aapka email
-        pass: 'xxxx xxxx xxxx xxxx' // ⚠️ YAHAN AAPKA GMAIL APP PASSWORD AAYEGA (Bina spaces ke)
-    }
-});
+// (Yahan se read/write wale duplicate helpers hata diye hain kyunki wo upar pehle se hain)
 
 // 1. Saare Users aur Stats nikalne ka Admin API
 app.get('/api/admin/users', (req, res) => {
