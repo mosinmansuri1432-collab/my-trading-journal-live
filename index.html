@@ -994,9 +994,6 @@ SUBSCRIPTION PLANS SECTION
     </div>
 </section>
 
-<!-- ===========================
-FOOTER
-=========================== -->
 <footer>
     <div>
         <h3>DISCIPLINE ADVANCED TRADER</h3>
@@ -1008,6 +1005,44 @@ FOOTER
     </div>
 </footer>
 
+</div> <div id="authModal" class="auth-overlay">
+    <div class="auth-box">
+        <div class="auth-tabs">
+            <button id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+            <button id="tabSignup" class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+        </div>
+
+        <form id="loginForm" class="auth-form active" onsubmit="handleAuthSubmit(event, 'login')">
+            <h2>Welcome Back</h2>
+            <p class="auth-subtitle">Enter your details to access your trading journal</p>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="loginEmail" placeholder="name@example.com" required>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="auth-btn">Sign In</button>
+            <p id="loginError" class="auth-error-msg"></p>
+        </form>
+
+        <form id="signupForm" class="auth-form" onsubmit="handleAuthSubmit(event, 'signup')">
+            <h2>Create Account</h2>
+            <p class="auth-subtitle">Start tracking your trades professionally today</p>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="signupEmail" placeholder="name@example.com" required>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="signupPassword" placeholder="Minimum 6 characters" required>
+            </div>
+            <button type="submit" class="auth-btn">Register</button>
+            <p id="signupError" class="auth-error-msg"></p>
+            <p id="signupSuccess" class="auth-success-msg"></p>
+        </form>
+    </div>
 </div>
 
 <script src="script.js"></script>

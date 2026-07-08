@@ -1670,4 +1670,76 @@ document.querySelectorAll('.buy-plan-btn').forEach(button => {
             e.target.disabled = false;
         }
     });
+});// Tab switcher (Login <-> Signup)
+function switchAuthTab(type) {
+    document.getElementById('tabLogin').classList.toggle('active', type === 'login');
+    document.getElementById('tabSignup').classList.toggle('active', type === 'signup');
+    document.getElementById('loginForm').classList.toggle('active', type === 'login');
+    document.getElementById('signupForm').classList.toggle('active', type === 'signup');
+    
+    // Clear old errors
+    document.getElementById('loginError').innerText = "";
+    document.getElementById('signupError').innerText = "";
+    document.getElementById('signupSuccess').innerText = "";
+}
+
+// Handle Form Submission
+async function handleAuthSubmit(event, type) {
+    event.preventDefault();
+    
+    const emailId = type === 'login' ? 'loginEmail' : 'signupEmail';
+    const passwordId = type === 'login' ? 'loginPassword' : 'signupPassword';
+    const errorId = type === 'login' ? 'loginError' : 'signupError';
+    
+    const email = document.getElementById(emailId).value;
+    const password = document.getElementById(passwordId).value;
+    const errorEl = document.getElementById(errorId);
+    
+    errorEl.innerText = ""; // clear message
+
+    try {
+        const url = type === 'login' ? '/api/auth/login' : '/api/auth/signup';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Something went wrong");
+        }
+
+        if (type === 'signup') {
+            document.getElementById('signupSuccess').innerText = "Registration successful! Switch to login tab.";
+            document.getElementById('signupForm').reset();
+        } else {
+            // LOGIN SUCCESS: Token save karein browser storage me
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // Modal gayab karein aur dashboard dikhayein
+            document.getElementById('authModal').style.display = 'none';
+            alert("Logged in successfully!");
+            
+            // Agar aapka koi refresh function hai toh use chala sakte hain
+            if (typeof loadJournal === 'function') loadJournal(); 
+        }
+
+    } catch (err) {
+        errorEl.innerText = err.message;
+    }
+}
+
+// Page load par check karein ki user logged in hai ya nahi
+window.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        // User logged in hai, toh modal mat dikhao
+        document.getElementById('authModal').style.display = 'none';
+    } else {
+        // User logged in nahi hai, modal dikhao
+        document.getElementById('authModal').style.display = 'flex';
+    }
 });
