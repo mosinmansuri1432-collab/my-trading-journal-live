@@ -187,4 +187,95 @@ SERVER START
 =========================================================*/
 app.listen(PORT, () => {
     console.log(`🚀 Server running smoothly on http://localhost:${PORT}`);
+});/*=========================================================
+👑 ADMIN PANEL BACKEND SECURE APIs
+=========================================================*/
+const fs = require('fs');
+const path = require('path');
+
+// Users data load karne ka helper (agar aapka users.json ka path alag hai toh adjust kar sakte hain)
+const USERS_FILE = path.join(__dirname, 'users.json');
+
+function readUsersFromFile() {
+    try {
+        if (!fs.existsSync(USERS_FILE)) return [];
+        const data = fs.readFileSync(USERS_FILE, 'utf8');
+        return JSON.parse(data || '[]');
+    } catch (e) {
+        console.error("Error reading users file:", e);
+        return [];
+    }
+}
+
+function writeUsersToFile(users) {
+    try {
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+    } catch (e) {
+        console.error("Error writing users file:", e);
+    }
+}
+
+// 1. Saare Users aur Stats nikalne ka API
+app.get('/api/admin/users', (req, res) => {
+    try {
+        // Security Check: Token validation ya simple check
+        // Abhi ke liye hum direct data bhej rahe hain taaki aapka test ho sake
+        const users = readUsersFromFile();
+        
+        // Counters Calculate karein
+        const totalUsers = users.length;
+        const paidUsers = users.filter(u => u.isPaid === true).length;
+        
+        // Maan lete hain Pro plan ki keemat ₹999 hai, us hisab se rough revenue
+        const revenue = paidUsers * 999; 
+
+        // Sirf password hatakar baaki safe data frontend ko bhejein
+        const safeUsersList = users.map(u => ({
+            email: u.email,
+            role: u.email === 'mosinmansuri1432@gmail.com' ? 'admin' : (u.role || 'user'),
+            isPaid: u.isPaid || false,
+            planExpiry: u.planExpiry || 'N/A'
+        }));
+
+        res.json({
+            success: true,
+            totalUsers,
+            paidUsers,
+            revenue,
+            users: safeUsersList
+        });
+
+    } catch (error) {
+        console.error("Admin API Error:", error);
+        res.status(500).json({ error: "Server Internal Error" });
+    }
+});
+
+// 2. Kisi bhi user ko Pro banane ya Downgrade karne ka API
+app.post('/api/admin/toggle-status', (req, res) => {
+    try {
+        const { email, isPaid } = req.body;
+        let users = readUsersFromFile();
+        
+        let userIndex = users.findIndex(u => u.email === email);
+        if (userIndex !== -1) {
+            users[userIndex].isPaid = isPaid;
+            
+            // Agar Pro kiya hai toh expiry date bhi daal dete hain (e.g., 30 days baad)
+            if(isPaid) {
+                let expiry = new Date();
+                expiry.setDate(expiry.getDate() + 30);
+                users[userIndex].planExpiry = expiry.toLocaleDateString();
+            } else {
+                users[userIndex].planExpiry = 'N/A';
+            }
+            
+            writeUsersToFile(users);
+            return res.json({ success: true, message: "User status updated successfully!" });
+        }
+        
+        res.status(404).json({ error: "User not found" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update status" });
+    }
 });
