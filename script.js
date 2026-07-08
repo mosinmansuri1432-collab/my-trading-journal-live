@@ -1600,6 +1600,7 @@ buildCalendar();
 console.log(
 "DISCIPLINE ADVANCED TRADER JOURNAL V2 READY"
 );
+
 /*=========================================================
 END OF FILE
 =========================================================*/ 
@@ -1634,7 +1635,6 @@ document.querySelectorAll('.buy-plan-btn').forEach(button => {
                 alert(`🎉 [TEST MODE SUCCESS]\nSubscription Activated Successfully!\nAmount: ₹${amount}\nSubscription ID: ${data.subscription_id}`);
                 e.target.innerText = originalText;
                 e.target.disabled = false;
-                // Premium Status update ka simulation (Day 5 feature)
                 localStorage.setItem("isTraderPremium", "true");
                 window.location.reload();
                 return;
@@ -1670,7 +1670,9 @@ document.querySelectorAll('.buy-plan-btn').forEach(button => {
             e.target.disabled = false;
         }
     });
-});// Tab switcher (Login <-> Signup)
+});
+
+// Tab switcher (Login <-> Signup)
 function switchAuthTab(type) {
     document.getElementById('tabLogin').classList.toggle('active', type === 'login');
     document.getElementById('tabSignup').classList.toggle('active', type === 'signup');
@@ -1723,7 +1725,9 @@ async function handleAuthSubmit(event, type) {
             document.getElementById('authModal').style.display = 'none';
             alert("Logged in successfully!");
             
-            // Agar aapka koi refresh function hai toh use chala sakte hain
+            // Login hote hi agar admin hai toh button turant dikhao
+            if (typeof checkAdminButton === 'function') checkAdminButton();
+            
             if (typeof loadJournal === 'function') loadJournal(); 
         }
 
@@ -1736,10 +1740,102 @@ async function handleAuthSubmit(event, type) {
 window.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     if (token) {
-        // User logged in hai, toh modal mat dikhao
         document.getElementById('authModal').style.display = 'none';
     } else {
-        // User logged in nahi hai, modal dikhao
         document.getElementById('authModal').style.display = 'flex';
     }
 });
+
+/*=========================================================
+👑 ADMIN DASHBOARD REAL ACTIONS & EVENT HANDLERS
+=========================================================*/
+
+// Admin Panel Open karne ka action
+function goToAdminPanel() {
+    const modal = document.getElementById('adminModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        fetchAdminData(); // Backend se data kheenchne wala function
+    }
+}
+
+// Admin Panel Close karne ka action
+function closeAdminPanel() {
+    const modal = document.getElementById('adminModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Backend API se Live Users and Income Stats Fetch karna
+async function fetchAdminData() {
+    try {
+        const response = await fetch('/api/admin/users', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) throw new Error("Unauthorized Access! Admin validation failed.");
+        
+        const data = await response.json();
+        
+        // Counters updating
+        document.getElementById('adminTotalUsers').innerText = data.totalUsers || 0;
+        document.getElementById('adminPaidUsers').innerText = data.paidUsers || 0;
+        document.getElementById('adminRevenue').innerText = `₹${data.revenue || 0}`;
+        
+        // Dynamic Table rows manipulation
+        const tbody = document.getElementById('adminUsersTableBody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            
+            data.users.forEach(u => {
+                const statusBadge = u.isPaid 
+                    ? `<span style="background: #22c55e; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: black;">PRO</span>`
+                    : `<span style="background: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: white;">FREE</span>`;
+                    
+                const actionBtn = `<button onclick="toggleUserPlan('${u.email}', ${u.isPaid})" style="background: #d4af37; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; color: black; font-weight: bold; font-size: 11px;">
+                    ${u.isPaid ? 'Downgrade' : 'Upgrade to Pro'}
+                </button>`;
+
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px;">${u.email}</td>
+                        <td style="padding: 12px; color: #d4af37;">${u.role || 'user'}</td>
+                        <td style="padding: 12px;">${statusBadge}</td>
+                        <td style="padding: 12px; color: var(--text2);">${u.planExpiry || 'N/A'}</td>
+                        <td style="padding: 12px; text-align: center;">${u.email === 'mosinmansuri1432@gmail.com' ? '👑 Owner' : actionBtn}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+    } catch (err) {
+        console.error("Failed to load admin panel data:", err);
+        const tbody = document.getElementById('adminUsersTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#ff4757;">Error loading admin database. API endpoints are being ready...</td></tr>`;
+        }
+    }
+}
+
+// User Ka status manually change karne ka frontend logic
+async function toggleUserPlan(email, currentStatus) {
+    if(!confirm(`Kya aap sach me is user ka subscription status badalna chahte hain?`)) return;
+    try {
+        const response = await fetch('/api/admin/toggle-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ email, isPaid: !currentStatus })
+        });
+        if(response.ok) {
+            fetchAdminData(); // Refresh list immediately
+        } else {
+            alert("Failed to update user plan on server.");
+        }
+    } catch (e) {
+        alert("Status update network error!");
+    }
+}
