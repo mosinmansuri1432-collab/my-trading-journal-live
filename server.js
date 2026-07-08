@@ -104,8 +104,69 @@ app.get("/", (req, res) => {
 });
 
 /*=========================================================
+🔐 USER REGISTRATION (SIGN UP) API
+=========================================================*/
+app.post('/api/auth/register', (req, res) => {
+    try {
+        const { email, password } = req.body;
+        let users = adminReadUsers(); // Hamara banaya hua helper function
+
+        // Check karein ki user pehle se registered toh nahi hai
+        const userExists = users.find(u => u.email === email);
+        if (userExists) {
+            return res.status(400).json({ error: "Yeh email pehle se registered hai!" });
+        }
+
+        // Naya user create karein
+        const newUser = {
+            email,
+            password, // Real project me ise hash karna chahiye, abhi simple rakh rahe hain
+            role: email === 'mosinmansuri1432@gmail.com' ? 'admin' : 'user',
+            isPaid: false,
+            planExpiry: 'N/A'
+        };
+
+        users.push(newUser);
+        adminWriteUsers(users);
+
+        res.json({ success: true, message: "Registration successful! Ab login karein." });
+    } catch (error) {
+        res.status(500).json({ error: "Registration failed!" });
+    }
+});
+
+/*=========================================================
+🔑 USER LOGIN SIGN IN API
+=========================================================*/
+app.post('/api/auth/login', (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const users = adminReadUsers();
+
+        // User dhoodhein
+        const user = users.find(u => u.email === email && u.password === password);
+        if (!user) {
+            return res.status(401).json({ error: "Invalid email ya password!" });
+        }
+
+        // Safe user data frontend ko bhejein
+        res.json({
+            success: true,
+            user: {
+                email: user.email,
+                role: user.email === 'mosinmansuri1432@gmail.com' ? 'admin' : (user.role || 'user'),
+                isPaid: user.isPaid || false
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Login system error!" });
+    }
+});
+
+/*=========================================================
 👑 ADMIN PANEL BACKEND SECURE APIs & OTP PASSWORD RESET
 =========================================================*/
+
 const nodemailer = require('nodemailer');
 let otpStore = {}; // Temporary memory OTP save karne ke liye
 
