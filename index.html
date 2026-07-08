@@ -1111,9 +1111,8 @@ SUBSCRIPTION PLANS SECTION
 </div> <!-- .app main container div closure -->
 
 <!-- Main Application Script -->
+ 
 <script src="script.js"></script>
-
-<!-- 👑 Admin Show/Hide Logic (Bulletproof Timer Version) -->
 <script>
 function checkAdminButton() {
     try {
@@ -1134,12 +1133,21 @@ function checkAdminButton() {
 // Page load hone par check karega
 document.addEventListener("DOMContentLoaded", checkAdminButton);
 
-// Background timer har 1 second me check karta rahega
+// Background timer har 1 second mein check karta rahega (bina page refresh ke)
 setInterval(checkAdminButton, 1000);
 
-// Admin Button click handler
+// 🎯 YAHAN REPLACE KIYA: Purana alert hata kar ab yeh script.js ke asli panel ko kholega
 function goToAdminPanel() {
-    alert("Welcome Boss! Admin Panel abhi ready ho raha hai.");
+    const modal = document.getElementById('adminModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Agar script.js ka data function ready hai toh use call karega
+        if (typeof fetchAdminData === 'function') {
+            fetchAdminData();
+        }
+    } else {
+        alert("Welcome Boss! Admin Modal HTML file mein nahi mila. Ek baar index.html check karein.");
+    }
 }
 </script>
 
