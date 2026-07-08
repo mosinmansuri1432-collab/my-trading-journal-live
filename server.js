@@ -187,13 +187,16 @@ SERVER START
 =========================================================*/
 app.listen(PORT, () => {
     console.log(`🚀 Server running smoothly on http://localhost:${PORT}`);
-});/*=========================================================
-👑 ADMIN PANEL BACKEND SECURE APIs
-=========================================================*/
-const fs = require('fs');
-const path = require('path');
 
-// Users data load karne ka helper (agar aapka users.json ka path alag hai toh adjust kar sakte hain)
+});
+
+/*=========================================================
+👑 ADMIN PANEL BACKEND SECURE APIs & OTP PASSWORD RESET
+=========================================================*/
+const nodemailer = require('nodemailer');
+let otpStore = {}; // Temporary memory OTP save karne ke liye
+
+// Users data load karne ke helpers
 const USERS_FILE = path.join(__dirname, 'users.json');
 
 function readUsersFromFile() {
@@ -215,21 +218,23 @@ function writeUsersToFile(users) {
     }
 }
 
-// 1. Saare Users aur Stats nikalne ka API
+// Apne Gmail SMTP se connect karne ke liye config
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'mosinmansuri1432@gmail.com', // Aapka email
+        pass: 'xxxx xxxx xxxx xxxx' // ⚠️ YAHAN AAPKA GMAIL APP PASSWORD AAYEGA (Bina spaces ke)
+    }
+});
+
+// 1. Saare Users aur Stats nikalne ka Admin API
 app.get('/api/admin/users', (req, res) => {
     try {
-        // Security Check: Token validation ya simple check
-        // Abhi ke liye hum direct data bhej rahe hain taaki aapka test ho sake
         const users = readUsersFromFile();
-        
-        // Counters Calculate karein
         const totalUsers = users.length;
         const paidUsers = users.filter(u => u.isPaid === true).length;
-        
-        // Maan lete hain Pro plan ki keemat ₹999 hai, us hisab se rough revenue
         const revenue = paidUsers * 999; 
 
-        // Sirf password hatakar baaki safe data frontend ko bhejein
         const safeUsersList = users.map(u => ({
             email: u.email,
             role: u.email === 'mosinmansuri1432@gmail.com' ? 'admin' : (u.role || 'user'),
@@ -244,14 +249,13 @@ app.get('/api/admin/users', (req, res) => {
             revenue,
             users: safeUsersList
         });
-
     } catch (error) {
         console.error("Admin API Error:", error);
         res.status(500).json({ error: "Server Internal Error" });
     }
 });
 
-// 2. Kisi bhi user ko Pro banane ya Downgrade karne ka API
+// 2. User ko Pro banane ya Downgrade karne ka Admin API
 app.post('/api/admin/toggle-status', (req, res) => {
     try {
         const { email, isPaid } = req.body;
@@ -261,7 +265,6 @@ app.post('/api/admin/toggle-status', (req, res) => {
         if (userIndex !== -1) {
             users[userIndex].isPaid = isPaid;
             
-            // Agar Pro kiya hai toh expiry date bhi daal dete hain (e.g., 30 days baad)
             if(isPaid) {
                 let expiry = new Date();
                 expiry.setDate(expiry.getDate() + 30);
@@ -273,9 +276,64 @@ app.post('/api/admin/toggle-status', (req, res) => {
             writeUsersToFile(users);
             return res.json({ success: true, message: "User status updated successfully!" });
         }
-        
         res.status(404).json({ error: "User not found" });
     } catch (error) {
         res.status(500).json({ error: "Failed to update status" });
+    }
+});
+
+// 3. Forgot Password - User ko OTP bhejne ka API
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const users = readUsersFromFile();
+        const userExists = users.find(u => u.email === email);
+
+        if (!userExists) {
+            return res.status(404).json({ error: "Yeh email registered nahi hai!" });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        otpStore[email] = { otp, expires: Date.now() + 10 * 60 * 1000 }; 
+
+        const mailOptions = {
+            from: '"Discipline Advanced Trader" <mosinmansuri1432@gmail.com>',
+            to: email,
+            subject: '🔒 Password Reset OTP Code',
+            html: `<h3>Discipline Advanced Trader - Security Verification</h3>
+                   <p>Aapne password reset ke liye request kiya hai. Aapka 6-digit verification code hai:</p>
+                   <h1 style="color:#d4af37; letter-spacing: 4px;">${otp}</h1>
+                   <p>Yeh code agle 10 minute tak valid hai. Agar aapne yeh request nahi kiya toh ise ignore karein.</p>`
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: "OTP aapke email par bhej diya gaya hai!" });
+    } catch (err) {
+        console.error("Email send error:", err);
+        res.status(500).json({ error: "Email bhejne mein dikkat aayi. SMTP config check karein." });
+    }
+});
+
+// 4. Reset Password - OTP aur Naya Password Verify karne ka API
+app.post('/api/auth/reset-password', (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        
+        if (!otpStore[email] || otpStore[email].otp !== otp || otpStore[email].expires < Date.now()) {
+            return res.status(400).json({ error: "Invalid ya Expired OTP code!" });
+        }
+
+        let users = readUsersFromFile();
+        const userIndex = users.findIndex(u => u.email === email);
+
+        if (userIndex !== -1) {
+            users[userIndex].password = newPassword; 
+            writeUsersToFile(users);
+            delete otpStore[email]; 
+            return res.json({ success: true, message: "Password kamyabi se badal gaya hai!" });
+        }
+        res.status(404).json({ error: "User nahi mila." });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to reset password" });
     }
 });
