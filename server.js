@@ -72,7 +72,6 @@ app.post("/api/auth/signup", async (req, res) => {
         res.status(500).json({ error: "Server error during signup" });
     }
 });
-
 // 2. LOGIN ROUTE
 app.post("/api/auth/login", async (req, res) => {
     try {
@@ -89,9 +88,13 @@ app.post("/api/auth/login", async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Galat Email ya Password" });
 
-        // JWT Token banayein (Yeh token user ke details browser me secure rakhega)
+        // === 👑 ADMIN CHECK LOGIC HERE ===
+        // Agar email aapki hai toh role 'admin' hoga, nahi toh database wala role (ya default 'user')
+        const finalRole = user.email === 'mosinmansuri1432@gmail.com' ? 'admin' : (user.role || 'user');
+
+        // JWT Token banayein (Humne user.role ki jagah finalRole daal diya hai)
         const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role, isPaid: user.isPaid },
+            { id: user.id, email: user.email, role: finalRole, isPaid: user.isPaid },
             JWT_SECRET,
             { expiresIn: "7d" } // Login 7 din tak valid rahega
         );
@@ -99,14 +102,13 @@ app.post("/api/auth/login", async (req, res) => {
         res.json({
             success: true,
             token,
-            user: { email: user.email, role: user.role, isPaid: user.isPaid }
+            user: { email: user.email, role: finalRole, isPaid: user.isPaid }
         });
     } catch (error) {
         console.error("Login Error:", error);
         res.status(500).json({ error: "Server error during login" });
     }
 });
-
 
 /*=========================================================
 GET JOURNAL (Ab sirf wahi user apna data dekh payega)

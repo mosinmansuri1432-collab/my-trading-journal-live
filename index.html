@@ -95,6 +95,11 @@ id="journalDate">
 
 </div>
 
+<!-- 👑 YAHAN ADD KIYA: Admin Dashboard Button (Pehle se hidden rahega) -->
+    <button id="admin-panel-btn" style="display: none; background: #ff4757; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Poppins', sans-serif; align-self: center; margin-left: 10px;" onclick="goToAdminPanel()">
+        <i class="fa-solid fa-crown"></i> Admin Panel
+    </button>
+
 </div>
 
 </header>
@@ -1045,6 +1050,27 @@ SUBSCRIPTION PLANS SECTION
     </div>
 </div>
 
-<script src="script.js"></script>
+</footer>
+
+</div> <script src="script.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // LocalStorage se login user ki detail nikalte hain
+    const loggedInUser = JSON.parse(localStorage.getItem('user')); 
+
+    if (loggedInUser && loggedInUser.role === 'admin') {
+        // Agar login karne wala admin hai, toh button dikhao
+        const adminBtn = document.getElementById('admin-panel-btn');
+        if(adminBtn) adminBtn.style.display = 'block';
+    }
+});
+
+// Admin Button par click karne ka action
+function goToAdminPanel() {
+    alert("Welcome Boss! Admin Panel abhi ready ho raha hai.");
+}
+</script>
+
 </body>
 </html>
