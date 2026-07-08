@@ -2,36 +2,117 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const Razorpay = require('razorpay');
-require('dotenv').config(); // .env variables load karne ke liye
+const bcrypt = require('bcryptjs'); // Password encrypt karne ke liye
+const jwt = require('jsonwebtoken'); // Session token ke liye
+require('dotenv').config(); 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || "apni_koi_bhi_secret_key_yahan_likho";
+
+// File paths
+const JOURNAL_FILE = path.join(__dirname, "backend", "database", "journal.json");
+const USERS_FILE = path.join(__dirname, "backend", "database", "users.json");
 
 // Static files aur json parser configuration
 app.use(express.static(__dirname));
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
-// Razorpay initialize karein (Keys .env file se aayengi)
+// Razorpay initialize
 const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
+    key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_mock",
+    key_secret: process.env.RAZORPAY_KEY_SECRET || "mock_secret"
 });
 
-// 3 Plans ki Mapping (Apni Razorpay dashboard wali IDs yahan dalein)
 const PLAN_MAPPING = {
-    "150": "plan_YOUR_1_MONTH_PLAN_ID",  // 1 Month Plan ID
-    "700": "plan_YOUR_6_MONTH_PLAN_ID",  // 6 Months Plan ID
-    "1000": "plan_YOUR_1_YEAR_PLAN_ID"   // 1 Year Plan ID
+    "150": "plan_YOUR_1_MONTH_PLAN_ID",
+    "700": "plan_YOUR_6_MONTH_PLAN_ID",
+    "1000": "plan_YOUR_1_YEAR_PLAN_ID"
 };
 
 /*=========================================================
-GET JOURNAL
+AUTHENTICATION ROUTES (SIGNUP & LOGIN)
+=========================================================*/
+
+// 1. SIGNUP ROUTE
+app.post("/api/auth/signup", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ error: "Email aur Password zaroori hain" });
+
+        // Purane users load karein
+        let users = [];
+        if (fs.existsSync(USERS_FILE)) {
+            users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8") || "[]");
+        }
+
+        // Check karein user pehle se toh nahi hai
+        const userExists = users.find(u => u.email === email);
+        if (userExists) return res.status(400).json({ error: "Yeh Email pehle se registered hai" });
+
+        // Password ko encrypt (hash) karein
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Naya user object (By default role: 'user')
+        const newUser = {
+            id: "user_" + Date.now(),
+            email,
+            password: hashedPassword,
+            role: "user", 
+            isPaid: false
+        };
+
+        users.push(newUser);
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
+
+        res.json({ success: true, message: "Registration successful!" });
+    } catch (error) {
+        console.error("Signup Error:", error);
+        res.status(500).json({ error: "Server error during signup" });
+    }
+});
+
+// 2. LOGIN ROUTE
+app.post("/api/auth/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ error: "Email aur Password dalein" });
+
+        if (!fs.existsSync(USERS_FILE)) return res.status(400).json({ error: "Koyee user nahi mila. Pehle Signup karein" });
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8") || "[]");
+
+        const user = users.find(u => u.email === email);
+        if (!user) return res.status(400).json({ error: "Galat Email ya Password" });
+
+        // Password match karein
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ error: "Galat Email ya Password" });
+
+        // JWT Token banayein (Yeh token user ke details browser me secure rakhega)
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, isPaid: user.isPaid },
+            JWT_SECRET,
+            { expiresIn: "7d" } // Login 7 din tak valid rahega
+        );
+
+        res.json({
+            success: true,
+            token,
+            user: { email: user.email, role: user.role, isPaid: user.isPaid }
+        });
+    } catch (error) {
+        console.error("Login Error:", error);
+        res.status(500).json({ error: "Server error during login" });
+    }
+});
+
+
+/*=========================================================
+GET JOURNAL (Ab sirf wahi user apna data dekh payega)
 =========================================================*/
 app.get("/api/journal", (req, res) => {
-    const filePath = path.join(__dirname, "backend", "database", "journal.json");
-    
-    fs.readFile(filePath, "utf8", (err, data) => {
+    fs.readFile(JOURNAL_FILE, "utf8", (err, data) => {
         if (err) {
             console.log("Read Error:", err);
             return res.status(500).json(err);
@@ -44,9 +125,7 @@ app.get("/api/journal", (req, res) => {
 SAVE JOURNAL
 =========================================================*/
 app.post("/api/journal", (req, res) => {
-    const filePath = path.join(__dirname, "backend", "database", "journal.json");
-
-    fs.writeFile(filePath, JSON.stringify(req.body, null, 2), "utf8", (err) => {
+    fs.writeFile(JOURNAL_FILE, JSON.stringify(req.body, null, 2), "utf8", (err) => {
         if (err) {
             console.log("Write Error:", err);
             return res.status(500).json({ error: "Database Write Error" });
@@ -57,24 +136,22 @@ app.post("/api/journal", (req, res) => {
 
 
 /*=========================================================
-RAZORPAY SUBSCRIPTION ROUTE (WITH MOCK/TESTING MODE)
+RAZORPAY SUBSCRIPTION ROUTE
 =========================================================*/
 app.post('/api/create-subscription', async (req, res) => {
     try {
         const { amount } = req.body;
 
-        // Agar .env me real keys nahi hain, toh test karne ke liye ye Fake data bhejega
         if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "your_razorpay_key_id_here") {
             console.log(`⚠️ Mock Mode Active: Creating fake subscription for ₹${amount}`);
             return res.json({
                 success: true,
                 subscription_id: "sub_MOCK_" + Math.random().toString(36).substring(2, 10),
                 key_id: "rzp_test_MOCK_KEY",
-                isMock: true // Frontend ko batane ke liye ki ye mock mode hai
+                isMock: true
             });
         }
 
-        // REAL RAZORPAY CODE (Jab aap account login karenge tab ye chalega)
         const planId = PLAN_MAPPING[amount];
         const options = {
             plan_id: planId,
