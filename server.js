@@ -2,177 +2,26 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const Razorpay = require('razorpay');
+const nodemailer = require('nodemailer');
 require('dotenv').config(); // .env variables load karne ke liye
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// OTP save karne ke liye global memory variable
+let otpStore = {}; 
 
 // Static files aur json parser configuration
 app.use(express.static(__dirname));
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
-// Razorpay initialize karein (Keys .env file se aayengi)
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
-
-// 3 Plans ki Mapping (Apni Razorpay dashboard wali IDs yahan dalein)
-const PLAN_MAPPING = {
-    "150": "plan_YOUR_1_MONTH_PLAN_ID",  // 1 Month Plan ID
-    "700": "plan_YOUR_6_MONTH_PLAN_ID",  // 6 Months Plan ID
-    "1000": "plan_YOUR_1_YEAR_PLAN_ID"   // 1 Year Plan ID
-};
-
-/*=========================================================
-GET JOURNAL
-=========================================================*/
-app.get("/api/journal", (req, res) => {
-    const filePath = path.join(__dirname, "backend", "database", "journal.json");
-    
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            console.log("Read Error:", err);
-            return res.status(500).json(err);
-        }
-        res.json(JSON.parse(data));
-    });
-});
-
-/*=========================================================
-SAVE JOURNAL
-=========================================================*/
-app.post("/api/journal", (req, res) => {
-    const filePath = path.join(__dirname, "backend", "database", "journal.json");
-
-    fs.writeFile(filePath, JSON.stringify(req.body, null, 2), "utf8", (err) => {
-        if (err) {
-            console.log("Write Error:", err);
-            return res.status(500).json({ error: "Database Write Error" });
-        }
-        res.json({ success: true });
-    });
-});
-
-
-/*=========================================================
-RAZORPAY SUBSCRIPTION ROUTE (WITH MOCK/TESTING MODE)
-=========================================================*/
-app.post('/api/create-subscription', async (req, res) => {
-    try {
-        const { amount } = req.body;
-
-        // Agar .env me real keys nahi hain, toh test karne ke liye ye Fake data bhejega
-        if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "your_razorpay_key_id_here") {
-            console.log(`⚠️ Mock Mode Active: Creating fake subscription for ₹${amount}`);
-            return res.json({
-                success: true,
-                subscription_id: "sub_MOCK_" + Math.random().toString(36).substring(2, 10),
-                key_id: "rzp_test_MOCK_KEY",
-                isMock: true // Frontend ko batane ke liye ki ye mock mode hai
-            });
-        }
-
-        // REAL RAZORPAY CODE (Jab aap account login karenge tab ye chalega)
-        const planId = PLAN_MAPPING[amount];
-        const options = {
-            plan_id: planId,
-            total_count: amount === "150" ? 12 : (amount === "700" ? 2 : 1),
-            quantity: 1,
-            customer_notify: 1
-        };
-
-        const subscription = await razorpay.subscriptions.create(options);
-        res.json({
-            success: true,
-            subscription_id: subscription.id,
-            key_id: process.env.RAZORPAY_KEY_ID
-        });
-
-    } catch (error) {
-        console.error("Razorpay Error:", error);
-        res.status(500).json({ success: false, message: "Subscription create nahi ho paya" });
-    }
-});
-
-/*=========================================================
-HOME PAGE ROUTE
-=========================================================*/
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-
-/*=========================================================
-🔐 USER REGISTRATION (SIGN UP) API
-=========================================================*/
-app.post('/api/auth/register', (req, res) => {
-    try {
-        const { email, password } = req.body;
-        let users = adminReadUsers(); // Hamara banaya hua helper function
-
-        // Check karein ki user pehle se registered toh nahi hai
-        const userExists = users.find(u => u.email === email);
-        if (userExists) {
-            return res.status(400).json({ error: "Yeh email pehle se registered hai!" });
-        }
-
-        // Naya user create karein
-        const newUser = {
-            email,
-            password, // Real project me ise hash karna chahiye, abhi simple rakh rahe hain
-            role: email === 'mosinmansuri1432@gmail.com' ? 'admin' : 'user',
-            isPaid: false,
-            planExpiry: 'N/A'
-        };
-
-        users.push(newUser);
-        adminWriteUsers(users);
-
-        res.json({ success: true, message: "Registration successful! Ab login karein." });
-    } catch (error) {
-        res.status(500).json({ error: "Registration failed!" });
-    }
-});
-
-/*=========================================================
-🔑 USER LOGIN SIGN IN API
-=========================================================*/
-app.post('/api/auth/login', (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const users = adminReadUsers();
-
-        // User dhoodhein
-        const user = users.find(u => u.email === email && u.password === password);
-        if (!user) {
-            return res.status(401).json({ error: "Invalid email ya password!" });
-        }
-
-        // Safe user data frontend ko bhejein
-        res.json({
-            success: true,
-            user: {
-                email: user.email,
-                role: user.email === 'mosinmansuri1432@gmail.com' ? 'admin' : (user.role || 'user'),
-                isPaid: user.isPaid || false
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ error: "Login system error!" });
-    }
-});
-
-/*=========================================================
-👑 ADMIN PANEL BACKEND SECURE APIs & OTP PASSWORD RESET
-=========================================================*/
-
-const nodemailer = require('nodemailer');
-let otpStore = {}; // Temporary memory OTP save karne ke liye
-
 // Users data load karne ka path (Jo aapke database folder me users.json h)
 const ADMIN_USERS_FILE = path.join(__dirname, 'backend', 'database', 'users.json');
 
+/*=========================================================
+📦 HELPER FUNCTIONS (Yahan sabse upar rakh diye hain)
+=========================================================*/
 function adminReadUsers() {
     try {
         if (!fs.existsSync(ADMIN_USERS_FILE)) return [];
@@ -192,16 +41,153 @@ function adminWriteUsers(users) {
     }
 }
 
+// Razorpay initialize karein (Keys .env file se aayengi)
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+// 3 Plans ki Mapping
+const PLAN_MAPPING = {
+    "150": "plan_YOUR_1_MONTH_PLAN_ID",
+    "700": "plan_YOUR_6_MONTH_PLAN_ID",
+    "1000": "plan_YOUR_1_YEAR_PLAN_ID"
+};
+
 // Apne Gmail SMTP se connect karne ke liye config
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'mosinmansuri1432@gmail.com', // Aapka email
-        pass: 'xxxx xxxx xxxx xxxx' // ⚠️ YAHAN AAPKA GMAIL APP PASSWORD AAYEGA (Bina spaces ke)
+        user: 'mosinmansuri1432@gmail.com', 
+        pass: 'xxxx xxxx xxxx xxxx' // ⚠️ YAHAN AAPKA GMAIL APP PASSWORD AAYEGA
     }
 });
 
-// 1. Saare Users aur Stats nikalne ka Admin API
+/*=========================================================
+🔄 USER-SPECIFIC GET JOURNAL (Fix: Har user ka apna data)
+=========================================================*/
+app.get("/api/journal", (req, res) => {
+    const userEmail = req.query.email;
+    let fileName = "journal.json"; 
+    
+    if (userEmail) {
+        const safeEmail = userEmail.replace(/[^a-zA-Z0-9]/g, "_");
+        fileName = `journal_${safeEmail}.json`;
+    }
+
+    const filePath = path.join(__dirname, "backend", "database", fileName);
+    
+    if (!fs.existsSync(filePath)) {
+        return res.json([]);
+    }
+
+    fs.readFile(filePath, "utf8", (err, data) => {
+        if (err) {
+            console.log("Read Error:", err);
+            return res.status(500).json(err);
+        }
+        res.json(JSON.parse(data || "[]"));
+    });
+});
+
+/*=========================================================
+🔄 USER-SPECIFIC SAVE JOURNAL (Fix: Dusro ka data overwrite nahi hoga)
+=========================================================*/
+app.post("/api/journal", (req, res) => {
+    const { email, journalData } = req.body;
+    let fileName = "journal.json";
+    let dataToSend = req.body;
+
+    if (email) {
+        const safeEmail = email.replace(/[^a-zA-Z0-9]/g, "_");
+        fileName = `journal_${safeEmail}.json`;
+        dataToSend = journalData; 
+    }
+
+    const filePath = path.join(__dirname, "backend", "database", fileName);
+
+    fs.writeFile(filePath, JSON.stringify(dataToSend, null, 2), "utf8", (err) => {
+        if (err) {
+            console.log("Write Error:", err);
+            return res.status(500).json({ error: "Database Write Error" });
+        }
+        res.json({ success: true });
+    });
+});
+
+/*=========================================================
+🔐 USER REGISTRATION (SIGN UP) API (Safe & Multiple Routes)
+=========================================================*/
+const handleRegister = (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email aur Password dono chahiye!" });
+        }
+
+        let users = adminReadUsers();
+
+        const userExists = users.find(u => u.email === email);
+        if (userExists) {
+            return res.status(400).json({ error: "Yeh email pehle se registered hai!" });
+        }
+
+        const newUser = {
+            email,
+            password,
+            role: email === 'mosinmansuri1432@gmail.com' ? 'admin' : 'user',
+            isPaid: false,
+            planExpiry: 'N/A'
+        };
+
+        users.push(newUser);
+        adminWriteUsers(users);
+
+        return res.json({ success: true, message: "Registration successful! Ab login karein." });
+    } catch (error) {
+        console.error("Register Error:", error);
+        return res.status(500).json({ error: "Registration failed!" });
+    }
+};
+
+app.post('/api/auth/register', handleRegister);
+app.post('/api/register', handleRegister);
+app.post('/register', handleRegister);
+
+/*=========================================================
+🔑 USER LOGIN SIGN IN API (Safe & Multiple Routes)
+=========================================================*/
+const handleLogin = (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const users = adminReadUsers();
+
+        const user = users.find(u => u.email === email && u.password === password);
+        if (!user) {
+            return res.status(401).json({ error: "Invalid email ya password!" });
+        }
+
+        return res.json({
+            success: true,
+            user: {
+                email: user.email,
+                role: user.email === 'mosinmansuri1432@gmail.com' ? 'admin' : (user.role || 'user'),
+                isPaid: user.isPaid || false
+            }
+        });
+    } catch (error) {
+        console.error("Login Error:", error);
+        return res.status(500).json({ error: "Login system error!" });
+    }
+};
+
+app.post('/api/auth/login', handleLogin);
+app.post('/api/login', handleLogin);
+app.post('/login', handleLogin);
+
+/*=========================================================
+👑 ADMIN PANEL BACKEND SECURE APIs 
+=========================================================*/
 app.get('/api/admin/users', (req, res) => {
     try {
         const users = adminReadUsers();
@@ -229,7 +215,6 @@ app.get('/api/admin/users', (req, res) => {
     }
 });
 
-// 2. User ko Pro banane ya Downgrade karne ka Admin API
 app.post('/api/admin/toggle-status', (req, res) => {
     try {
         const { email, isPaid } = req.body;
@@ -256,7 +241,9 @@ app.post('/api/admin/toggle-status', (req, res) => {
     }
 });
 
-// 3. Forgot Password - User ko OTP bhejne ka API
+/*=========================================================
+📩 OTP PASSWORD RESET SYSTEM
+=========================================================*/
 app.post('/api/auth/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -288,7 +275,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
 });
 
-// 4. Reset Password - OTP aur Naya Password Verify karne ka API
 app.post('/api/auth/reset-password', (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
@@ -310,6 +296,51 @@ app.post('/api/auth/reset-password', (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Failed to reset password" });
     }
+});
+
+/*=========================================================
+RAZORPAY SUBSCRIPTION ROUTE
+=========================================================*/
+app.post('/api/create-subscription', async (req, res) => {
+    try {
+        const { amount } = req.body;
+
+        if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "your_razorpay_key_id_here") {
+            console.log(`⚠️ Mock Mode Active: Creating fake subscription for ₹${amount}`);
+            return res.json({
+                success: true,
+                subscription_id: "sub_MOCK_" + Math.random().toString(36).substring(2, 10),
+                key_id: "rzp_test_MOCK_KEY",
+                isMock: true
+            });
+        }
+
+        const planId = PLAN_MAPPING[amount];
+        const options = {
+            plan_id: planId,
+            total_count: amount === "150" ? 12 : (amount === "700" ? 2 : 1),
+            quantity: 1,
+            customer_notify: 1
+        };
+
+        const subscription = await razorpay.subscriptions.create(options);
+        res.json({
+            success: true,
+            subscription_id: subscription.id,
+            key_id: process.env.RAZORPAY_KEY_ID
+        });
+
+    } catch (error) {
+        console.error("Razorpay Error:", error);
+        res.status(500).json({ success: false, message: "Subscription create nahi ho paya" });
+    }
+});
+
+/*=========================================================
+HOME PAGE ROUTE
+=========================================================*/
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 /*=========================================================
