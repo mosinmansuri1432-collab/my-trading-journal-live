@@ -1838,4 +1838,14 @@ async function toggleUserPlan(email, currentStatus) {
     } catch (e) {
         alert("Status update network error!");
     }
+}// 🚪 User Logout Function (Session clear karne ke liye)
+function handleLogout() {
+    // LocalStorage se login session ka data saaf karein
+    localStorage.removeItem('user');
+    localStorage.removeItem('token'); 
+    
+    alert("🔒 Aap successfully log out ho gaye hain!");
+    
+    // Page ko reload karein taaki fresh login screen wapas aa jaye
+    window.location.reload();
 }

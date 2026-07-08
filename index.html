@@ -95,9 +95,12 @@ id="journalDate">
 
 </div>
 
-<!-- 👑 YAHAN ADD KIYA: Admin Dashboard Button (Pehle se hidden rahega) -->
-    <button id="admin-panel-btn" style="display: none; background: #ff4757; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Poppins', sans-serif; align-self: center; margin-left: 10px;" onclick="goToAdminPanel()">
+<button id="admin-panel-btn" style="display: none; background: #ff4757; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Poppins', sans-serif; align-self: center; margin-left: 10px;" onclick="goToAdminPanel()">
         <i class="fa-solid fa-crown"></i> Admin Panel
+    </button>
+
+    <button id="logoutBtn" style="background: #ff4d4d; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Poppins', sans-serif; align-self: center; margin-left: 10px;" onclick="handleLogout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
     </button>
 
 </div>
@@ -1111,7 +1114,7 @@ SUBSCRIPTION PLANS SECTION
 </div> <!-- .app main container div closure -->
 
 <!-- Main Application Script -->
- 
+
 <script src="script.js"></script>
 <script>
 function checkAdminButton() {
