@@ -1008,9 +1008,11 @@ SUBSCRIPTION PLANS SECTION
         <p>Version 2.0</p>
         <p>Designed for Personal Trading Performance</p>
     </div>
-</footer>
 
-</div> <div id="authModal" class="auth-overlay">
+   </footer>
+
+<!-- Auth Modal Section -->
+<div id="authModal" class="auth-overlay">
     <div class="auth-box">
         <div class="auth-tabs">
             <button id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
@@ -1050,23 +1052,36 @@ SUBSCRIPTION PLANS SECTION
     </div>
 </div>
 
-</footer>
+</div> <!-- .app main container div closure -->
 
-</div> <script src="script.js"></script>
+<!-- Main Application Script -->
+<script src="script.js"></script>
 
+<!-- 👑 Admin Show/Hide Logic (Bulletproof Timer Version) -->
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    // LocalStorage se login user ki detail nikalte hain
-    const loggedInUser = JSON.parse(localStorage.getItem('user')); 
+function checkAdminButton() {
+    try {
+        const loggedInUser = JSON.parse(localStorage.getItem('user')); 
 
-    if (loggedInUser && loggedInUser.role === 'admin') {
-        // Agar login karne wala admin hai, toh button dikhao
-        const adminBtn = document.getElementById('admin-panel-btn');
-        if(adminBtn) adminBtn.style.display = 'block';
+        if (loggedInUser && (loggedInUser.role === 'admin' || loggedInUser.email === 'mosinmansuri1432@gmail.com')) {
+            const adminBtn = document.getElementById('admin-panel-btn');
+            if (adminBtn && adminBtn.style.display !== 'block') {
+                adminBtn.style.display = 'block';
+                console.log("👑 Admin Panel Button Displayed!");
+            }
+        }
+    } catch (e) {
+        console.error("Admin check error:", e);
     }
-});
+}
 
-// Admin Button par click karne ka action
+// Page load hone par check karega
+document.addEventListener("DOMContentLoaded", checkAdminButton);
+
+// Background timer har 1 second me check karta rahega
+setInterval(checkAdminButton, 1000);
+
+// Admin Button click handler
 function goToAdminPanel() {
     alert("Welcome Boss! Admin Panel abhi ready ho raha hai.");
 }
